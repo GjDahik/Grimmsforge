@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forja de Grimm</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(180deg, #1a0a0a 0%, #2d1810 50%, #1a0a0a 100%);
+      min-height: 100vh;
+      color: #e8d5c4;
+      padding: 20px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    header {
+      text-align: center;
+      padding: 30px 20px;
+      background: linear-gradient(135deg, rgba(139,69,19,0.4), rgba(0,0,0,0.6));
+      border-radius: 15px;
+      margin-bottom: 25px;
+      border: 2px solid #8b4513;
+    }
+    h1 {
+      font-size: 2.5em;
+      background: linear-gradient(90deg, #ff6b35, #f7931e, #ffcc00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+    .subtitle { color: #c9a87c; font-size: 1.1em; }
+    .level-selector {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+      padding: 15px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 12px;
+      border: 1px solid #5c3a21;
+    }
+    .level-btn {
+      padding: 12px 20px;
+      border: 2px solid;
+      border-radius: 8px;
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+    }
+    .level-btn[data-level="1"] { border-color: #8b8b8b; color: #c0c0c0; }
+    .level-btn[data-level="1"].active { background: rgba(192,192,192,0.3); }
+    .level-btn[data-level="6"] { border-color: #4a90d9; color: #6bb3ff; }
+    .level-btn[data-level="6"].active { background: rgba(74,144,217,0.3); }
+    .level-btn[data-level="11"] { border-color: #9b59b6; color: #bb77dd; }
+    .level-btn[data-level="11"].active { background: rgba(155,89,182,0.3); }
+    .level-btn[data-level="16"] { border-color: #ff6b35; color: #ff8c5a; }
+    .level-btn[data-level="16"].active { background: rgba(255,107,53,0.3); }
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab-btn {
+      padding: 12px 24px;
+      border: 2px solid #5c3a21;
+      border-radius: 8px;
+      background: rgba(92,58,33,0.3);
+      color: #c9a87c;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 500;
+    }
+    .tab-btn.active { background: rgba(255,107,53,0.2); border-color: #ff6b35; color: #ffcc00; }
+    .main-content { display: flex; gap: 25px; flex-wrap: wrap; }
+    .products-section { flex: 2; min-width: 300px; }
+    .cart-section {
+      flex: 1;
+      min-width: 280px;
+      background: linear-gradient(180deg, rgba(45,24,16,0.9), rgba(26,10,10,0.9));
+      border-radius: 15px;
+      padding: 20px;
+      border: 2px solid #8b4513;
+      position: sticky;
+      top: 20px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .cart-title { font-size: 1.4em; color: #ffcc00; margin-bottom: 15px; }
+    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+    .category-title {
+      grid-column: 1 / -1;
+      font-size: 1.4em;
+      color: #ffcc00;
+      padding: 15px 0 10px 0;
+      border-bottom: 2px solid rgba(255,204,0,0.3);
+      margin-bottom: 10px;
+    }
+    .product-card {
+      background: linear-gradient(135deg, rgba(92,58,33,0.4), rgba(26,10,10,0.6));
+      border-radius: 12px;
+      padding: 20px;
+      border: 2px solid #5c3a21;
+      transition: all 0.3s;
+    }
+    .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(255,107,53,0.2); }
+    .product-card.tier-1 { border-left: 4px solid #c0c0c0; }
+    .product-card.tier-6 { border-left: 4px solid #6bb3ff; }
+    .product-card.tier-11 { border-left: 4px solid #bb77dd; }
+    .product-card.tier-16 { border-left: 4px solid #ff6b35; }
+    .product-name { font-size: 1.1em; font-weight: 600; margin-bottom: 8px; color: #f0e6d3; }
+    .product-tier {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.75em;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    .tier-1 .product-tier { background: #c0c0c0; color: #1a0a0a; }
+    .tier-6 .product-tier { background: #6bb3ff; color: #1a0a0a; }
+    .tier-11 .product-tier { background: #bb77dd; color: #1a0a0a; }
+    .tier-16 .product-tier { background: #ff6b35; color: #1a0a0a; }
+    .damage-info {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      background: rgba(255,107,53,0.15);
+      border-radius: 8px;
+      border-left: 3px solid #ff6b35;
+    }
+    .damage-dice { font-weight: bold; color: #ffcc00; font-size: 1.1em; }
+    .damage-type { color: #ff8c5a; font-size: 0.85em; }
+    .product-desc { color: #a89070; font-size: 0.9em; margin-bottom: 12px; }
+    .product-footer { display: flex; justify-content: space-between; align-items: center; }
+    .product-price { font-size: 1.3em; font-weight: bold; color: #ffcc00; }
+    .add-btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #8b4513, #cd853f);
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+    }
+    .add-btn:hover { transform: scale(1.05); background: linear-gradient(135deg, #a0522d, #daa520); }
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: rgba(92,58,33,0.3);
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #5c3a21;
+    }
+    .cart-item-info { flex: 1; }
+    .cart-item-name { font-size: 0.95em; margin-bottom: 3px; color: #f0e6d3; }
+    .cart-item-price { color: #ffcc00; font-size: 0.85em; }
+    .cart-item-controls { display: flex; align-items: center; gap: 8px; }
+    .qty-btn {
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 6px;
+      background: #5c3a21;
+      color: #fff;
+      cursor: pointer;
+      font-size: 1.1em;
+    }
+    .qty-btn:hover { background: #8b4513; }
+    .cart-total { margin-top: 20px; padding-top: 15px; border-top: 2px solid #8b4513; }
+    .total-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .total-label { color: #a89070; }
+    .total-value { color: #ffcc00; font-weight: bold; }
+    .grand-total { font-size: 1.4em; margin-top: 10px; }
+    .checkout-btn {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #ff6b35, #f7931e);
+      color: #1a0a0a;
+      font-size: 1.1em;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+    .checkout-btn:hover { box-shadow: 0 5px 20px rgba(255,107,53,0.5); }
+    .checkout-btn:disabled { background: #5c3a21; color: #888; cursor: not-allowed; }
+    .empty-cart { text-align: center; color: #a89070; padding: 30px; }
+    .no-results { text-align: center; padding: 50px; color: #a89070; font-size: 1.2em; grid-column: 1 / -1; }
+    .info-section {
+      background: linear-gradient(135deg, rgba(92,58,33,0.3), rgba(26,10,10,0.6));
+      border-radius: 15px;
+      padding: 25px;
+      border: 2px solid #5c3a21;
+    }
+    .info-title { font-size: 1.3em; color: #ff6b35; margin-bottom: 15px; }
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+    .info-card {
+      background: rgba(92,58,33,0.3);
+      padding: 18px;
+      border-radius: 10px;
+      border: 1px solid #5c3a21;
+    }
+    .info-card h4 { color: #ffcc00; margin-bottom: 10px; }
+    .info-card p, .info-card li { color: #c9a87c; font-size: 0.9em; line-height: 1.6; }
+    .info-card ul { padding-left: 20px; }
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, #ff6b35, #f7931e);
+      color: #1a0a0a;
+      border-radius: 50%;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    .material-tag {
+      display: inline-block;
+      background: rgba(255,107,53,0.2);
+      color: #ff8c5a;
+      padding: 4px 10px;
+      border-radius: 15px;
+      font-size: 0.8em;
+      margin: 3px;
+    }
+    .discount-badge {
+      display: inline-block;
+      background: #2ecc71;
+      color: #fff;
+      padding: 3px 10px;
+      border-radius: 10px;
+      font-size: 0.8em;
+      margin-left: 8px;
+    }
+    .section-divider {
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #8b4513, transparent);
+      margin: 30px 0;
+    }
+    .cost-summary { margin-top: 10px; }
+    .cost-boxes {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+    .cost-box {
+      background: rgba(0,0,0,0.3);
+      border-radius: 12px;
+      padding: 20px 40px;
+      text-align: center;
+      border: 2px solid;
+      min-width: 180px;
+    }
+    .cost-min { border-color: #2ecc71; }
+    .cost-max { border-color: #ff6b35; }
+    .cost-label {
+      font-size: 0.9em;
+      color: #a89070;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .cost-value {
+      font-size: 2em;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .cost-min .cost-value { color: #2ecc71; }
+    .cost-max .cost-value { color: #ff6b35; }
+    .cost-time {
+      font-size: 0.9em;
+      color: #c9a87c;
+    }
+    .cost-warning {
+      display: flex;
+      gap: 15px;
+      align-items: flex-start;
+      background: rgba(255,107,53,0.1);
+      border: 1px solid rgba(255,107,53,0.3);
+      border-radius: 10px;
+      padding: 15px 20px;
+      margin-top: 20px;
+    }
+    .warning-icon {
+      font-size: 1.5em;
+      flex-shrink: 0;
+    }
+    .warning-text {
+      color: #c9a87c;
+      font-size: 0.95em;
+      line-height: 1.5;
+    }
+    .warning-text strong {
+      color: #ff8c5a;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: linear-gradient(135deg, #2d1810, #1a0a0a);
+      padding: 30px;
+      border-radius: 15px;
+      max-width: 500px;
+      width: 90%;
+      border: 2px solid #ff6b35;
+      text-align: center;
+    }
+    .modal h2 { color: #ffcc00; margin-bottom: 20px; }
+    .modal p { color: #c9a87c; margin-bottom: 20px; }
+    .modal-btn {
+      padding: 12px 30px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #ff6b35, #f7931e);
+      color: #1a0a0a;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>⚔️ Forja de Grimm</h1>
+      <p class="subtitle">Herrero Legendario — Armas y Armaduras de los Dioses</p>
+    </header>
+
+    <div class="level-selector">
+      <span style="color:#a89070;margin-right:10px;align-self:center;">Nivel del grupo:</span>
+      <button class="level-btn active" data-level="1">⚪ Nv. 1-5</button>
+      <button class="level-btn" data-level="6">🔵 Nv. 6-10</button>
+      <button class="level-btn" data-level="11">🟣 Nv. 11-15</button>
+      <button class="level-btn" data-level="16">🔥 Nv. 16-20</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="shop">🛒 Tienda</button>
+      <button class="tab-btn" data-tab="services">🔧 Servicios</button>
+      <button class="tab-btn" data-tab="custom">⚒️ Creación Custom</button>
+      <button class="tab-btn" data-tab="materials">🌟 Materiales</button>
+      <button class="tab-btn" data-tab="terms">📜 Términos</button>
+    </div>
+
+    <div id="shop-tab" class="tab-content active">
+      <div class="main-content">
+        <div class="products-section">
+          <div class="products-grid" id="shop-grid"></div>
+        </div>
+        <div class="cart-section">
+          <div class="cart-title">🛒 Pedido</div>
+          <div id="cart-items"></div>
+          <div class="cart-total" id="cart-total"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="services-tab" class="tab-content">
+      <div class="main-content">
+        <div class="products-section">
+          <div class="products-grid" id="services-grid"></div>
+        </div>
+        <div class="cart-section">
+          <div class="cart-title">🛒 Pedido</div>
+          <div id="cart-items-2"></div>
+          <div class="cart-total" id="cart-total-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="custom-tab" class="tab-content">
+      <div class="info-section">
+        <h3 class="info-title">⚒️ Proceso de Creación Custom</h3>
+        <div class="info-grid">
+          <div class="info-card">
+            <h4><span class="step-number">1</span>Consultoría de Diseño</h4>
+            <p>Grimm realiza una consulta para entender las necesidades: tipo de material, runas, efectos y estética.</p>
+            <p style="margin-top:8px;"><strong>Tiempo:</strong> 1-2 días | <strong>Costo:</strong> 200 GP</p>
+          </div>
+          <div class="info-card">
+            <h4><span class="step-number">2</span>Selección de Materiales</h4>
+            <p>El jugador selecciona o proporciona materiales. Si son raros, Grimm puede conseguirlos con costo adicional.</p>
+            <p style="margin-top:8px;"><strong>Tiempo:</strong> 1-2 días</p>
+          </div>
+          <div class="info-card">
+            <h4><span class="step-number">3</span>Diseño y Planificación</h4>
+            <p>Grimm elabora un plano detallado incluyendo características mágicas.</p>
+            <p style="margin-top:8px;"><strong>Tiempo:</strong> 3-4 días | <strong>Costo:</strong> 300 GP</p>
+          </div>
+          <div class="info-card">
+            <h4><span class="step-number">4</span>Forja y Fabricación</h4>
+            <p>Proceso de fundición, tallado y runificación de la pieza.</p>
+            <p style="margin-top:8px;"><strong>Tiempo:</strong> 5-7 días | <strong>Costo:</strong> 2,000-5,000 GP</p>
+          </div>
+          <div class="info-card">
+            <h4><span class="step-number">5</span>Inscripción de Runas</h4>
+            <p>Opcional: Grimm inscribe runas mágicas o efectos especiales.</p>
+            <p style="margin-top:8px;"><strong>Tiempo:</strong> 2-3 días | <strong>Costo:</strong> 500-1,500 GP</p>
+          </div>
+          <div class="info-card">
+            <h4><span class="step-number">6</span>Pruebas y Entrega</h4>
+            <p>Prueba de la pieza y entrega final al jugador.</p>
+            <p style="margin-top:8px;"><strong>Tiempo:</strong> 1-2 días | <strong>Costo:</strong> 300 GP</p>
+          </div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="cost-summary">
+          <h3 class="info-title">💰 Resumen de Costos Estimados</h3>
+          <div class="cost-boxes">
+            <div class="cost-box cost-min">
+              <div class="cost-label">Mínimo</div>
+              <div class="cost-value">2,800 GP</div>
+              <div class="cost-time">~14 días</div>
+            </div>
+            <div class="cost-box cost-max">
+              <div class="cost-label">Máximo</div>
+              <div class="cost-value">7,300 GP</div>
+              <div class="cost-time">~21 días</div>
+            </div>
+          </div>
+          <div class="cost-warning">
+            <span class="warning-icon">⚠️</span>
+            <div class="warning-text">
+              <strong>No incluye:</strong> Materiales especiales (metales raros, gemas mágicas, componentes alquímicos), runas adicionales, ni modificaciones posteriores al diseño inicial. Estos costos se calculan por separado según la pestaña de Materiales.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="materials-tab" class="tab-content">
+      <div class="info-section">
+        <h3 class="info-title">🌟 Materiales Especiales</h3>
+        <div class="info-grid">
+          <div class="info-card">
+            <h4>Runas Menores</h4>
+            <p>Inscripciones mágicas básicas.</p>
+            <p style="margin-top:10px;color:#ffcc00;font-size:1.1em;">500 - 1,000 GP</p>
+          </div>
+          <div class="info-card">
+            <h4>Metales Raros</h4>
+            <div style="margin-top:8px;">
+              <span class="material-tag">Acero de Dragón</span>
+              <span class="material-tag">Mithril</span>
+              <span class="material-tag">Adamantina</span>
+            </div>
+            <p style="margin-top:10px;color:#ffcc00;font-size:1.1em;">1,500 - 3,000 GP</p>
+          </div>
+          <div class="info-card">
+            <h4>Gemas Mágicas</h4>
+            <div style="margin-top:8px;">
+              <span class="material-tag">Rubí de Fuego</span>
+              <span class="material-tag">Zafiro Glacial</span>
+              <span class="material-tag">Esmeralda Vital</span>
+            </div>
+            <p style="margin-top:10px;color:#ffcc00;font-size:1.1em;">200 - 1,500 GP</p>
+          </div>
+          <div class="info-card">
+            <h4>Componentes Alquímicos</h4>
+            <div style="margin-top:8px;">
+              <span class="material-tag">Sangre de Elemental</span>
+              <span class="material-tag">Polvo de Fénix</span>
+            </div>
+            <p style="margin-top:10px;color:#ffcc00;font-size:1.1em;">100 - 500 GP</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="terms-tab" class="tab-content">
+      <div class="info-section">
+        <h3 class="info-title">📜 Términos y Condiciones</h3>
+        <div class="info-grid">
+          <div class="info-card">
+            <h4>💰 Pago Anticipado</h4>
+            <p>Se requiere un <strong>50% de pago anticipado</strong> al inicio del trabajo.</p>
+          </div>
+          <div class="info-card">
+            <h4>📦 Entrega</h4>
+            <p>Grimm entregará la obra dentro del tiempo estimado.</p>
+          </div>
+          <div class="info-card">
+            <h4>🔄 Revisiones</h4>
+            <p><strong>1 revisión gratuita</strong> antes de la creación.</p>
+          </div>
+        </div>
+        <div class="section-divider"></div>
+        <h3 class="info-title">🎁 Descuentos</h3>
+        <div class="info-grid">
+          <div class="info-card">
+            <h4>Clientes Frecuentes <span class="discount-badge">-5%</span></h4>
+            <p>Después de 3 servicios de creación.</p>
+          </div>
+          <div class="info-card">
+            <h4>Trabajo en Grupo <span class="discount-badge">-10%</span></h4>
+            <p>Si todo el grupo solicita piezas.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <h2>⚔️ ¡Pedido Confirmado!</h2>
+      <p id="modal-text">Grimm comenzará a trabajar en tu pedido.</p>
+      <button class="modal-btn" onclick="closeModal()">Cerrar</button>
+    </div>
+  </div>
+
+  <script>
+    const shopItems = [
+      { id: 1, name: "Espada Corta", price: 50, tier: 1, damage: "1d6", damageType: "Perforante", desc: "Arma marcial, Ligera, Finesse" },
+      { id: 2, name: "Daga", price: 25, tier: 1, damage: "1d4", damageType: "Perforante", desc: "Arma simple, Ligera, Finesse, Arrojadiza" },
+      { id: 3, name: "Hacha de Mano", price: 30, tier: 1, damage: "1d6", damageType: "Cortante", desc: "Arma simple, Ligera, Arrojadiza" },
+      { id: 4, name: "Maza", price: 30, tier: 1, damage: "1d6", damageType: "Contundente", desc: "Arma simple" },
+      { id: 5, name: "Armadura de Cuero", price: 75, tier: 1, ac: "12 + DES", desc: "Armadura ligera", isArmor: true },
+      { id: 6, name: "Espada Larga", price: 200, tier: 6, damage: "1d8 (1d10)", damageType: "Cortante", desc: "Arma marcial, Versátil" },
+      { id: 7, name: "Hacha de Batalla", price: 200, tier: 6, damage: "1d8 (1d10)", damageType: "Cortante", desc: "Arma marcial, Versátil" },
+      { id: 8, name: "Martillo de Guerra", price: 200, tier: 6, damage: "1d8 (1d10)", damageType: "Contundente", desc: "Arma marcial, Versátil" },
+      { id: 9, name: "Estoque (Rapier)", price: 250, tier: 6, damage: "1d8", damageType: "Perforante", desc: "Arma marcial, Finesse" },
+      { id: 10, name: "Armadura de Hierro", price: 300, tier: 6, ac: "16", desc: "Armadura pesada, FUE 13", isArmor: true },
+      { id: 11, name: "Espada Grande", price: 600, tier: 11, damage: "2d6", damageType: "Cortante", desc: "Arma marcial, Pesada, Dos manos" },
+      { id: 12, name: "Gran Hacha", price: 600, tier: 11, damage: "1d12", damageType: "Cortante", desc: "Arma marcial, Pesada, Dos manos" },
+      { id: 13, name: "Mazo (Maul)", price: 600, tier: 11, damage: "2d6", damageType: "Contundente", desc: "Arma marcial, Pesada, Dos manos" },
+      { id: 14, name: "Alabarda", price: 650, tier: 11, damage: "1d10", damageType: "Cortante", desc: "Arma marcial, Alcance, Dos manos" },
+      { id: 15, name: "Armadura de Acero", price: 750, tier: 11, ac: "17", desc: "Armadura pesada, FUE 15", isArmor: true },
+      { id: 16, name: "Espada Rúnica Legendaria", price: 2500, tier: 16, damage: "2d6+1d6⚡", damageType: "Cortante+Elemental", desc: "Arma mágica +2" },
+      { id: 17, name: "Gran Hacha de Hierro Oscuro", price: 3000, tier: 16, damage: "1d12+1d8🔥", damageType: "Cortante+Fuego", desc: "Arma mágica +2" },
+      { id: 18, name: "Martillo de los Titanes", price: 3500, tier: 16, damage: "2d6+1d6⚡", damageType: "Contundente+Trueno", desc: "Arma mágica +2" },
+      { id: 19, name: "Armadura de Hierro Oscuro", price: 3500, tier: 16, ac: "18+1", desc: "Armadura legendaria, Res. fuego", isArmor: true }
+    ];
+
+    const serviceItems = [
+      { id: 101, name: "Reparación Básica", price: 25, tier: 1, desc: "Restauración de armas y armaduras dañadas" },
+      { id: 102, name: "Herramientas Simples", price: 50, tier: 1, desc: "Martillos, hachas, picos de calidad" },
+      { id: 103, name: "Afilado Express", price: 50, tier: 6, desc: "+1 daño hasta el final de la sesión" },
+      { id: 104, name: "Reparación Armas Mágicas", price: 500, tier: 6, desc: "Restauración de propiedades mágicas" },
+      { id: 105, name: "Mejora con Runas", price: 1000, tier: 6, desc: "Inscripción de runas mágicas" },
+      { id: 106, name: "Reparación de Reliquias", price: 1500, tier: 11, desc: "Restauración de artefactos antiguos" },
+      { id: 107, name: "Mejoras Mágicas Avanzadas", price: 1200, tier: 11, desc: "Potenciación de propiedades mágicas" },
+      { id: 108, name: "Creación de Reliquias", price: 5000, tier: 16, desc: "Forja de artefactos míticos" },
+      { id: 109, name: "Mejoras Legendarias", price: 1500, tier: 16, desc: "Potenciación máxima de equipo" }
+    ];
+
+    let cart = [];
+    let currentLevel = 1;
+    const tierNames = { 1: "Nv. 1-5", 6: "Nv. 6-10", 11: "Nv. 11-15", 16: "Nv. 16-20" };
+    const tierClasses = { 1: "tier-1", 6: "tier-6", 11: "tier-11", 16: "tier-16" };
+
+    function renderShop() {
+      const grid = document.getElementById("shop-grid");
+      const items = shopItems.filter(s => s.tier === currentLevel);
+      const weapons = items.filter(s => !s.isArmor);
+      const armors = items.filter(s => s.isArmor);
+
+      let html = "";
+      if (weapons.length > 0) {
+        html += '<div class="category-title">⚔️ Armas</div>';
+        weapons.forEach(s => { html += renderCard(s); });
+      }
+      if (armors.length > 0) {
+        html += '<div class="category-title">🛡️ Armaduras</div>';
+        armors.forEach(s => { html += renderCard(s); });
+      }
+      grid.innerHTML = html || '<div class="no-results">No hay items para este nivel</div>';
+    }
+
+    function renderServices() {
+      const grid = document.getElementById("services-grid");
+      const items = serviceItems.filter(s => s.tier === currentLevel);
+
+      let html = "";
+      if (items.length > 0) {
+        html += '<div class="category-title">🔧 Servicios</div>';
+        items.forEach(s => { html += renderServiceCard(s); });
+      }
+      grid.innerHTML = html || '<div class="no-results">No hay servicios para este nivel</div>';
+    }
+
+    function renderCard(s) {
+      const priceText = s.price >= 1000 ? (s.price/1000).toFixed(1) + "k" : s.price;
+      const damageHtml = s.isArmor 
+        ? '<div class="damage-info"><span class="damage-dice">🛡️ CA: ' + s.ac + '</span></div>'
+        : '<div class="damage-info"><span class="damage-dice">⚔️ ' + s.damage + '</span><span class="damage-type">' + s.damageType + '</span></div>';
+      
+      return '<div class="product-card ' + tierClasses[s.tier] + '">' +
+        '<div class="product-name">' + s.name + '</div>' +
+        '<span class="product-tier">' + tierNames[s.tier] + '</span>' +
+        damageHtml +
+        '<div class="product-desc">' + s.desc + '</div>' +
+        '<div class="product-footer">' +
+        '<span class="product-price">' + priceText + ' GP</span>' +
+        '<button class="add-btn" onclick="addToCart(' + s.id + ')">+ Añadir</button>' +
+        '</div></div>';
+    }
+
+    function renderServiceCard(s) {
+      const priceText = s.price >= 1000 ? (s.price/1000).toFixed(1) + "k" : s.price;
+      return '<div class="product-card ' + tierClasses[s.tier] + '">' +
+        '<div class="product-name">' + s.name + '</div>' +
+        '<span class="product-tier">' + tierNames[s.tier] + '</span>' +
+        '<div class="product-desc">' + s.desc + '</div>' +
+        '<div class="product-footer">' +
+        '<span class="product-price">' + priceText + ' GP</span>' +
+        '<button class="add-btn" onclick="addToCart(' + s.id + ')">+ Añadir</button>' +
+        '</div></div>';
+    }
+
+    function addToCart(id) {
+      const allItems = [...shopItems, ...serviceItems];
+      const item = allItems.find(s => s.id === id);
+      const existing = cart.find(c => c.id === id);
+      if (existing) { existing.qty++; } 
+      else { cart.push({ ...item, qty: 1 }); }
+      renderCart();
+    }
+
+    function updateQty(id, delta) {
+      const item = cart.find(c => c.id === id);
+      if (item) {
+        item.qty += delta;
+        if (item.qty <= 0) { cart = cart.filter(c => c.id !== id); }
+      }
+      renderCart();
+    }
+
+    function renderCart() {
+      const containers = [document.getElementById("cart-items"), document.getElementById("cart-items-2")];
+      const totals = [document.getElementById("cart-total"), document.getElementById("cart-total-2")];
+
+      const cartHtml = cart.length === 0 
+        ? '<div class="empty-cart">⚔️ Sin pedidos aún</div>'
+        : cart.map(item => 
+            '<div class="cart-item"><div class="cart-item-info">' +
+            '<div class="cart-item-name">' + item.name + '</div>' +
+            '<div class="cart-item-price">' + item.price + ' GP c/u</div></div>' +
+            '<div class="cart-item-controls">' +
+            '<button class="qty-btn" onclick="updateQty(' + item.id + ', -1)">−</button>' +
+            '<span>' + item.qty + '</span>' +
+            '<button class="qty-btn" onclick="updateQty(' + item.id + ', 1)">+</button>' +
+            '</div></div>'
+          ).join("");
+
+      containers.forEach(c => { if(c) c.innerHTML = cartHtml; });
+
+      if (cart.length === 0) {
+        totals.forEach(t => { if(t) t.innerHTML = ""; });
+        return;
+      }
+
+      const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+      const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
+      const discount = totalItems >= 4 ? Math.floor(subtotal * 0.1) : 0;
+      const total = subtotal - discount;
+      const advance = Math.floor(total * 0.5);
+
+      const totalHtml = '<div class="total-row"><span class="total-label">Subtotal:</span><span class="total-value">' + subtotal.toLocaleString() + ' GP</span></div>' +
+        (discount > 0 ? '<div class="total-row"><span class="total-label">Desc. Grupo:</span><span class="total-value" style="color:#2ecc71;">-' + discount.toLocaleString() + ' GP</span></div>' : '') +
+        '<div class="total-row grand-total"><span class="total-label">Total:</span><span class="total-value">' + total.toLocaleString() + ' GP</span></div>' +
+        '<div class="total-row"><span class="total-label">Anticipo (50%):</span><span class="total-value" style="color:#ff8c5a;">' + advance.toLocaleString() + ' GP</span></div>' +
+        '<button class="checkout-btn" onclick="checkout()">⚔️ Confirmar Pedido</button>';
+
+      totals.forEach(t => { if(t) t.innerHTML = totalHtml; });
+    }
+
+    function checkout() {
+      const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+      document.getElementById("modal-text").textContent = "Total: " + total.toLocaleString() + " GP. Grimm comenzará a trabajar.";
+      document.getElementById("modal").classList.add("active");
+      cart = [];
+      renderCart();
+    }
+
+    function closeModal() {
+      document.getElementById("modal").classList.remove("active");
+    }
+
+    // Level buttons
+    document.querySelectorAll(".level-btn").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        document.querySelectorAll(".level-btn").forEach(function(b) { b.classList.remove("active"); });
+        this.classList.add("active");
+        currentLevel = parseInt(this.getAttribute("data-level"));
+        renderShop();
+        renderServices();
+      });
+    });
+
+    // Tab buttons
+    document.querySelectorAll(".tab-btn").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        document.querySelectorAll(".tab-btn").forEach(function(b) { b.classList.remove("active"); });
+        this.classList.add("active");
+        document.querySelectorAll(".tab-content").forEach(function(c) { c.classList.remove("active"); });
+        document.getElementById(this.getAttribute("data-tab") + "-tab").classList.add("active");
+      });
+    });
+
+    renderShop();
+    renderServices();
+    renderCart();
+  </script>
+</body>
+</html>
